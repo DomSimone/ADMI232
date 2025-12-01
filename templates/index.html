@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to ADMI{% endblock %}
+
+{% block content %}
+    <div class="container main-content">
+        <h1>Welcome to African Development Models Initiative!</h1>
+        <p> a project of the Patson Malisa Foundation in service to the successful implementation of Citizen-oriented and Citizen-Led projects with regards to sustainable economic and social development in the continent of Africa and beyond.</p>
+        <p>Select a module to get started:</p>
+                <div>
+                    <div class ="main-nav-buttons">
+            <a href="{{ url_for('research_management') }}" class="button-link">Research Management Dashboard</a>
+            <a href="{{ url_for('survey_list') }}" class="button-link">Survey Forms & Questions</a>
+            <a href="{{ url_for('document_processing_page') }}" class="button-link">AI Document Processing</a>
+            <a href="{{ url_for('data_processing_terminal_page') }}" class="button-link">Data Processing Terminal</a>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Research Management Dashboard{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Specific styles for research_management page */
+    .dashboard-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .widget {
+        background-color: #f4f4f4;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: relative; /* For remove button positioning */
+    }
+    .widget h3 {
+        margin-top: 0;
+        color: #555;
+    }
+    .widget-controls {
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .widget-controls label {
+        margin-bottom: 0;
+    }
+    .widget-placeholder {
+        border: 2px dashed #ccc;
+        padding: 20px;
+        text-align: center;
+        color: #888;
+        min-height: 100px; /* Ensure visibility */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .widget button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        font-size: 0.8em;
+        background-color: #dc3545;
+    }
+    .widget button:hover {
+        background-color: #c82333;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Research Management Dashboard</h1>
+
+        <div class="widget-controls">
+            <label for="addWidget">Add Widget:</label>
+            <select id="addWidget">
+                <option value="">--Select--</option>
+                <option value="totalResearch">Total Research Count</option>
+                <option value="activeResearch">Active Research</option>
+                <option value="recentActivity">Recent Activity</option>
+                <option value="responsesSummary">Responses Summary</option>
+            </select>
+            <button class="button-primary" onclick="addSelectedWidget()">Add</button>
+        </div>
+
+        <div id="dashboard" class="dashboard-container">
+            <!-- Widgets will be loaded here -->
+            <div class="widget-placeholder" id="placeholder-message">Drag and drop widgets here, or use the 'Add Widget' dropdown.</div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        let dashboardWidgets = JSON.parse(localStorage.getItem('dashboardWidgets')) || [];
+        const dashboardContainer = document.getElementById('dashboard');
+
+        function saveWidgets() {
+            localStorage.setItem('dashboardWidgets', JSON.stringify(dashboardWidgets));
+        }
+
+        function renderDashboard() {
+            dashboardContainer.innerHTML = ''; // Clear existing widgets
+            if (dashboardWidgets.length === 0) {
+                dashboardContainer.innerHTML = '<div class="widget-placeholder" id="placeholder-message">Drag and drop widgets here, or use the \'Add Widget\' dropdown.</div>';
+            } else {
+                fetch('/api/dashboard_data')
+                    .then(response => response.json())
+                    .then(data => {
+                        dashboardWidgets.forEach(widgetType => {
+                            const widgetElement = createWidgetElement(widgetType, data);
+                            if (widgetElement) {
+                                dashboardContainer.appendChild(widgetElement);
+                            }
+                        });
+                    })
+                    .catch(error => console.error('Error fetching dashboard data:', error));
+            }
+        }
+
+        function createWidgetElement(type, data) {
+            const widget = document.createElement('div');
+            widget.className = 'widget';
+            widget.setAttribute('data-widget-type', type);
+            widget.draggable = true;
+            widget.ondragstart = drag;
+
+            let content = '';
+            switch (type) {
+                case 'totalResearch':
+                    content = `<h3>Total Research Count</h3><p>${data.total_research}</p>`;
+                    break;
+                case 'activeResearch':
+                    content = `<h3>Active Research</h3><p>${data.active_research}</p>`;
+                    break;
+                case 'recentActivity':
+                    content = `<h3>Recent Activity</h3><ul>`;
+                    data.recent_activity.forEach(item => {
+                        content += `<li>${item.title} (${item.last_activity})</li>`;
+                    });
+                    content += `</ul>`;
+                    break;
+                case 'responsesSummary':
+                    content = `<h3>Responses Summary</h3><ul>`;
+                    for (const [title, count] of Object.entries(data.responses_summary)) {
+                        content += `<li>${title}: ${count} responses</li>`;
+                    }
+                    content += `</ul>`;
+                    break;
+                default:
+                    return null;
+            }
+            widget.innerHTML = content + `<button class="button-danger" onclick="removeWidget(this)">Remove</button>`;
+            return widget;
+        }
+
+        function addSelectedWidget() {
+            const select = document.getElementById('addWidget');
+            const widgetType = select.value;
+            if (widgetType && !dashboardWidgets.includes(widgetType)) {
+                dashboardWidgets.push(widgetType);
+                saveWidgets();
+                renderDashboard();
+                select.value = ''; // Reset dropdown
+            }
+        }
+
+        function removeWidget(buttonElement) {
+            const widgetElement = buttonElement.closest('.widget');
+            const widgetType = widgetElement.getAttribute('data-widget-type');
+            dashboardWidgets = dashboardWidgets.filter(type => type !== widgetType);
+            saveWidgets();
+            renderDashboard();
+        }
+
+        // Drag and Drop functionality
+        let draggedWidget = null;
+
+        function drag(ev) {
+            draggedWidget = ev.target;
+            ev.dataTransfer.setData("text/plain", ev.target.getAttribute('data-widget-type'));
+        }
+
+        dashboardContainer.ondragover = function(ev) {
+            ev.preventDefault(); // Allow drop
+            const afterElement = getDragAfterElement(dashboardContainer, ev.clientY);
+            const draggable = document.querySelector('.dragging');
+            if (draggable && afterElement) {
+                dashboardContainer.insertBefore(draggable, afterElement);
+            } else if (draggable && !afterElement && dashboardContainer.children.length > 0 && !dashboardContainer.querySelector('.widget-placeholder')) {
+                dashboardContainer.appendChild(draggable);
+            } else if (draggable && (dashboardContainer.children.length === 0 || (dashboardContainer.children.length === 1 && dashboardContainer.querySelector('.widget-placeholder')))) {
+                if (dashboardContainer.querySelector('.widget-placeholder')) {
+                    dashboardContainer.querySelector('.widget-placeholder').remove();
+                }
+                dashboardContainer.appendChild(draggable);
+            }
+        };
+
+        dashboardContainer.ondrop = function(ev) {
+            ev.preventDefault();
+            if (draggedWidget) {
+                draggedWidget.classList.remove('dragging');
+                draggedWidget = null;
+
+                // Update the order in dashboardWidgets array
+                const newOrderTypes = Array.from(dashboardContainer.querySelectorAll('.widget'))
+                                       .map(item => item.getAttribute('data-widget-type'));
+                dashboardWidgets = newOrderTypes;
+                saveWidgets();
+                renderDashboard(); // Re-render to ensure correct state and remove placeholder if needed
+            }
+        };
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.widget:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: -Infinity }).element;
+        }
+
+        // Initial render
+        document.addEventListener('DOMContentLoaded', renderDashboard);
+    </script>
+{% endblock %}

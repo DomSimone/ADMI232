@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}AI Document Processing{% endblock %}
+
+{% block head_extra %}
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 1000px; margin: auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        .section { margin-bottom: 30px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #fdfdfd; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="file"], textarea, select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        textarea { min-height: 80px; resize: vertical; }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-right: 10px;
+        }
+        button:hover { background-color: #0056b3; }
+        .message { margin-top: 15px; padding: 10px; border-radius: 4px; }
+        .message.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .message.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        pre { background-color: #eee; padding: 15px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+        .file-list { margin-top: 10px; font-size: 0.9em; color: #555; }
+        .file-list span { display: inline-block; background-color: #e9ecef; padding: 3px 8px; border-radius: 3px; margin-right: 5px; margin-bottom: 5px; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>AI Native Vision & OCR</h1>
+
+        <div class="section">
+            <h2>1. Document Ingestion & Understanding</h2>
+            <form id="documentUploadForm" enctype="multipart/form-data">
+                <label for="documents">Upload Documents (PDF/CSV, max 30 items):</label>
+                <input type="file" id="documents" name="documents" accept=".pdf,.csv" multiple>
+                <button type="submit">Upload Documents</button>
+            </form>
+            <div id="uploadMessage" class="message" style="display:none;"></div>
+            <div id="uploadedFilesList" class="file-list"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Structured Output Prompting & Generative AI Extraction</h2>
+            <label for="extractionPrompt">Extraction Prompt:</label>
+            <textarea id="extractionPrompt" placeholder="e.g., Identify specific metadata fields: 'Invoice Number', 'Date', 'Vendor Name'. Extract data from tables. Format as CSV."></textarea>
+            
+            <label for="outputFormat">Output Format:</label>
+            <select id="outputFormat">
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+            </select>
+            <button onclick="processDocuments()">Process Documents</button>
+            <div id="processMessage" class="message" style="display:none;"></div>
+            
+            <h3>Extracted Output:</h3>
+            <pre id="extractedOutput"></pre>
+        </div>
+
+        <div class="section">
+            <h2>3. Analog Study Metadata Upload</h2>
+            <form id="analogMetadataUploadForm" enctype="multipart/form-data">
+                <label for="metadataFiles">Upload Metadata Files (CSV/PDF):</label>
+                <input type="file" id="metadataFiles" name="metadataFiles" accept=".pdf,.csv" multiple>
+                <button type="submit">Upload Metadata</button>
+            </form>
+            <div id="analogUploadMessage" class="message" style="display:none;"></div>
+            <div id="uploadedMetadataList" class="file-list"></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        let uploadedDocumentNames = []; // Stores filenames of documents uploaded for processing
+
+        // --- Utility Functions ---
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `message ${type}`;
+            element.style.display = 'block';
+        }
+
+        function clearMessage(elementId) {
+            const element = document.getElementById(elementId);
+            element.textContent = '';
+            element.className = 'message';
+            element.style.display = 'none';
+        }
+
+        function updateFileList(listElementId, filenames) {
+            const listElement = document.getElementById(listElementId);
+            listElement.innerHTML = '';
+            if (filenames.length > 0) {
+                filenames.forEach(name => {
+                    const span = document.createElement('span');
+                    span.textContent = name;
+                    listElement.appendChild(span);
+                });
+            } else {
+                listElement.textContent = 'No files uploaded yet.';
+            }
+        }
+
+        // --- Document Upload ---
+        document.getElementById('documentUploadForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            clearMessage('uploadMessage');
+            uploadedDocumentNames = []; // Clear previous list
+
+            const formData = new FormData();
+            const files = document.getElementById('documents').files;
+
+            if (files.length === 0) {
+                showMessage('uploadMessage', 'Please select documents to upload.', 'error');
+                return;
+            }
+            if (files.length > 30) {
+                showMessage('uploadMessage', 'Maximum 30 documents allowed at a time.', 'error');
+                return;
+            }
+
+            for (let i = 0; i < files.length; i++) {
+                formData.append('documents', files[i]);
+            }
+
+            try {
+                const response = await fetch('/api/upload_documents', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('uploadMessage', data.message, 'success');
+                    uploadedDocumentNames = data.filenames;
+                    updateFileList('uploadedFilesList', uploadedDocumentNames);
+                } else {
+                    showMessage('uploadMessage', data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error uploading documents:', error);
+                showMessage('uploadMessage', 'An error occurred during upload.', 'error');
+            }
+        });
+
+        // --- Document Processing ---
+        async function processDocuments() {
+            clearMessage('processMessage');
+            document.getElementById('extractedOutput').textContent = '';
+
+            if (uploadedDocumentNames.length === 0) {
+                showMessage('processMessage', 'Please upload documents first.', 'error');
+                return;
+            }
+
+            const prompt = document.getElementById('extractionPrompt').value;
+            if (!prompt.trim()) {
+                showMessage('processMessage', 'Please provide an extraction prompt.', 'error');
+                return;
+            }
+
+            const outputFormat = document.getElementById('outputFormat').value;
+
+            try {
+                const response = await fetch('/api/process_document', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        filenames: uploadedDocumentNames,
+                        prompt: prompt,
+                        output_format: outputFormat
+                    }),
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('processMessage', 'Documents processed successfully!', 'success');
+                    document.getElementById('extractedOutput').textContent = data.result;
+                } else {
+                    showMessage('processMessage', data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error processing documents:', error);
+                showMessage('processMessage', 'An error occurred during processing.', 'error');
+            }
+        }
+
+        // --- Analog Metadata Upload ---
+        document.getElementById('analogMetadataUploadForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            clearMessage('analogUploadMessage');
+
+            const formData = new FormData();
+            const files = document.getElementById('metadataFiles').files;
+
+            if (files.length === 0) {
+                showMessage('analogUploadMessage', 'Please select metadata files to upload.', 'error');
+                return;
+            }
+
+            for (let i = 0; i < files.length; i++) {
+                formData.append('metadata_files', files[i]);
+            }
+
+            try {
+                const response = await fetch('/api/upload_analog_metadata', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('analogUploadMessage', data.message, 'success');
+                    updateFileList('uploadedMetadataList', data.filenames);
+                } else {
+                    showMessage('analogUploadMessage', data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error uploading analog metadata:', error);
+                showMessage('analogUploadMessage', 'An error occurred during upload.', 'error');
+            }
+        });
+
+        // Initial state
+        document.addEventListener('DOMContentLoaded', () => {
+            updateFileList('uploadedFilesList', uploadedDocumentNames);
+            updateFileList('uploadedMetadataList', []); // Initially empty
+        });
+    </script>
+{% endblock %}

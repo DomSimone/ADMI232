@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}About Us - African Development Models Initiative{% endblock %}
+
+{% block head_extra %}
+    <style>
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            line-height: 1.6;
+        }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 20px; }
+        h2 { color: #34495e; margin-top: 25px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        p { margin-bottom: 10px; }
+        ul { list-style-type: disc; margin-left: 20px; margin-bottom: 10px; }
+        ul li { margin-bottom: 5px; }
+        .back-link { display: block; text-align: center; margin-top: 30px; color: #007bff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>About the African Development Models Initiative</h1>
+
+        <p>The African Development Models Initiative is a project of the Patson Malisa Foundation; which serves to lead the successful implementation of Citizen-oriented and Citizen-Led projects with regards to sustainable economic and social development in the continent of Africa and beyond. The ADMI project is critical due to three core systemic issues currently hindering accurate statistical work in the region:</p>
+
+        <ul>
+            <li><strong>No Mainstream Platform:</strong> African stats agencies currently lack a unified platform required to adequately function and cooperate effectively.</li>
+            <li><strong>Lack of Quality Control:</strong> Clear Process (or "Pre-process") rules and validation protocols are missing, leading to unreliable data.</li>
+            <li><strong>Rural Isolation:</strong> Geographic and infrastructure isolation severely slows down and hinders the entry and accuracy of critical statistics.</li>
+        </ul>
+
+        <p>We have therefore dedicated this Web based sites and app to deliver the following solutions:</p>
+
+        <h2>Detailed Channels & Mechanisms</h2>
+        <ul>
+            <li><strong>Survey Forms & Questions:</strong>
+                <ul>
+                    <li>Develop universal, validated Survey Forms for data comparability.</li>
+                    <li>Perform rigorous QA on all questions to eliminate bias and ambiguity.</li>
+                    <li>Implement digital form logic (branching, validation) to minimize input errors.</li>
+                </ul>
+            </li>
+            <li><strong>Model Trained (Data Ingestion):</strong>
+                <ul>
+                    <li>Deploy trained AI/ML models for initial data classification, cleaning, and ingestion.</li>
+                    <li>Focus on OCR capabilities for efficient processing of paper returns.</li>
+                    <li>Establish ongoing model retraining to adapt to evolving field data.</li>
+                </ul>
+            </li>
+            <li><strong>Mainstream Process: Channels:</strong>
+                <ul>
+                    <li>Internet: Design secure, responsive web/mobile interfaces for direct digital entry.</li>
+                    <li>GSM: Utilize USSD, SMS, and basic apps for remote areas lacking full internet access.</li>
+                    <li>Paper: Maintain a secure paper channel as a failsafe, linked directly to the OCR pipeline.</li>
+                </ul>
+            </li>
+            <li><strong>Free Sat Network interaction:</strong>
+                <ul>
+                    <li>Collaboration with a dedicated, cost-free satellite network to bridge critical data gaps in the most Rural Isolation zones.</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>Data Process Phase: Detailed Pipeline & Controls</h2>
+        <ul>
+            <li><strong>Quality Control (QC):</strong>
+                <ul>
+                    <li>Facilitate multi-stage QC checks immediately upon data ingestion from all channels.</li>
+                    <li>Enforce automated validation rules (range, consistency, outlier checks).</li>
+                    <li>Dedicated dashboards for QC monitoring to quickly review, approve, or reject flagged data batches.</li>
+                </ul>
+            </li>
+            <li><strong>Time Bound:</strong>
+                <ul>
+                    <li>Enforcement of SLAs for processing (e.g., 24-48 hours from collection).</li>
+                    <li>Implement time-stamping across the pipeline to track and identify latency bottlenecks.</li>
+                    <li>Prioritize near real-time processing to mitigate data lag.</li>
+                </ul>
+            </li>
+            <li><strong>Mainstream Interoperability / Interfaces:</strong>
+                <ul>
+                    <li>Develop standardized APIs and export formats (e.g., SDMX) for seamless data exchange with partner agencies.</li>
+                    <li>Focus on common data standards to solve the "No Mainstream Platform" issue.</li>
+                    <li>Create secure, user-friendly query interfaces for partners.</li>
+                </ul>
+            </li>
+            <li><strong>Algorithm Editing:</strong>
+                <ul>
+                    <li>Integrate a secure, controlled environment for managing cleaning, weighting, and imputation algorithms.</li>
+                    <li>Require full version control and documentation for all algorithm changes.</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>Data Analysis: Detailed Requirements</h2>
+        <ul>
+            <li><strong>IDE Package/Frame for Analysts:</strong>
+                <ul>
+                    <li>Supply a unified, specialized Analytical Framework or IDE that is pre-configured and secure.</li>
+                    <li>Prioritize a low-barrier-to-entry user experience to standardize the environment.</li>
+                    <li>Integrate version control for tracking analysis scripts.</li>
+                </ul>
+            </li>
+            <li><strong>Regression and other Models:</strong>
+                <ul>
+                    <li>Ensuring the framework supports a comprehensive, validated library of statistical models.</li>
+                    <li>Mandatory inclusion of core techniques: Linear, Logistic, and Non-Linear Regression.</li>
+                    <li>Required support for advanced methods: Time-series forecasting and clustering.</li>
+                </ul>
+            </li>
+            <li><strong>Regulate Quality of Results:</strong>
+                <ul>
+                    <li>Implement mandatory validation and peer-review protocols within the workflow.</li>
+                    <li>Establish standardized reporting templates to automatically capture model parameters and reliability metrics (e.g., R-squared).</li>
+                    <li>Define clear metrics for reproducibility and reliability of final statistics.</li>
+                </ul>
+            </li>
+        </ul>
+        <a href="{{ url_for('index') }}" class="back-link">Back to Home</a>
+    </div>
+{% endblock %}

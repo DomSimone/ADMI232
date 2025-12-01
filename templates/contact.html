@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; }
+        .header {
+            background-color: #ffffff;
+            padding: 10px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .header .logo {
+            max-height: 50px;
+            width: auto;
+            object-fit: contain;
+            vertical-align: middle;
+        }
+        .header .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+        .header .nav-links a {
+            color: #007bff;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        .header .nav-links a:hover {
+            background-color: #e9ecef;
+        }
+        .container {
+            max-width: 700px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            line-height: 1.6;
+        }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 20px; }
+        .contact-form div { margin-bottom: 15px; }
+        .contact-form label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .contact-form input[type="text"],
+        .contact-form input[type="email"],
+        .contact-form input[type="tel"],
+        .contact-form textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        .contact-form textarea { min-height: 120px; resize: vertical; }
+        .contact-form button {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .contact-form button:hover { background-color: #218838; }
+        .form-notice {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border: 1px solid #d0e9da;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #3c763d;
+        }
+        .privacy-link {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .privacy-link a { color: #007bff; text-decoration: none; }
+        .privacy-link a:hover { text-decoration: underline; }
+        .back-link { display: block; text-align: center; margin-top: 30px; color: #007bff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="App Logo" class="logo"></a>
+        <div class="nav-links">
+            <a href="{{ url_for('research_management') }}">Research Dashboard</a>
+            <a href="{{ url_for('survey_list') }}">Survey Management</a>
+            <a href="{{ url_for('document_processing_page') }}">AI Document Processing</a>
+            <a href="{{ url_for('data_processing_terminal_page') }}">Data Terminal</a>
+            <a href="{{ url_for('about_page') }}">About Us</a>
+            <a href="{{ url_for('terms_page') }}">Terms of Use</a>
+            <a href="{{ url_for('contact_page') }}">Contact Us</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Contact Us</h1>
+        <p style="text-align: center;">We'd love to hear from you! Please fill out the form below for any general inquiries.</p>
+
+        <form class="contact-form" action="#" method="POST"> {# Action will be handled by JS or a dedicated Flask route later #}
+            <div>
+                <label for="fullName">Full Name:</label>
+                <input type="text" id="fullName" name="fullName" required>
+            </div>
+            <div>
+                <label for="emailAddress">Email Address:</label>
+                <input type="email" id="emailAddress" name="emailAddress" required>
+            </div>
+            <div>
+                <label for="phoneNumber">Phone Number (Optional):</label>
+                <input type="tel" id="phoneNumber" name="phoneNumber">
+            </div>
+            <div>
+                <label for="inquiryDetails">Message/Inquiry Details:</label>
+                <textarea id="inquiryDetails" name="inquiryDetails" required></textarea>
+            </div>
+            <button type="submit">Send Message</button>
+        </form>
+
+        <div class="form-notice">
+            <p>We aim to reply to all inquiries within 1 business day.</p>
+        </div>
+        <div class="privacy-link">
+            <p>For Security and Privacy, please refer to our <a href="{{ url_for('terms_page') }}">Terms of Use</a>.</p>
+        </div>
+        
+        <a href="{{ url_for('index') }}" class="back-link">Back to Home</a>
+    </div>
+</body>
+</html>

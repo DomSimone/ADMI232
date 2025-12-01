@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Survey{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Specific styles for create_survey page */
+    .container {
+        max-width: 600px;
+    }
+    .back-link {
+        display: block;
+        margin-top: 20px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Create New Survey</h1>
+        <form action="{{ url_for('create_survey') }}" method="POST">
+            <div>
+                <label for="title">Survey Title:</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div>
+                <label for="description">Description:</label>
+                <textarea id="description" name="description"></textarea>
+            </div>
+            <button type="submit" class="button-success">Create Survey</button>
+        </form>
+        <a href="{{ url_for('survey_list') }}" class="button-link">Back to Survey List</a>
+    </div>
+{% endblock %}

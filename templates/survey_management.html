@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Survey Management{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Specific styles for survey_management page */
+    .survey-list {
+        margin-top: 20px;
+    }
+    .survey-item {
+        background-color: #f9f9f9;
+        border: 1px solid #e0e0e0;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .survey-item-info {
+        flex-grow: 1;
+    }
+    .survey-item-info p {
+        margin: 0;
+        font-size: 1.1em;
+        color: #343a40;
+    }
+    .survey-item-info p strong {
+        color: #2c3e50;
+    }
+    .survey-actions {
+        display: flex;
+        gap: 10px;
+    }
+    .survey-actions a {
+        padding: 8px 15px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .survey-actions a:first-child { /* Edit Design button */
+        background-color: #007bff;
+        color: white;
+    }
+    .survey-actions a:first-child:hover {
+        background-color: #0056b3;
+    }
+    .survey-actions a:last-child { /* Take Survey button */
+        background-color: #28a745;
+        color: white;
+    }
+    .survey-actions a:last-child:hover {
+        background-color: #218838;
+    }
+    .add-button {
+        background-color: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 10px;
+        font-size: 1em;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .add-button:hover {
+        background-color: #218838;
+        transform: translateY(-2px);
+    }
+    .add-button:active {
+        transform: translateY(0);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Survey Management</h1>
+        <a href="{{ url_for('create_survey') }}" class="add-button">Create New Survey</a>
+
+        <div class="survey-list">
+            {% if surveys %}
+                {% for survey in surveys %}
+                    <div class="survey-item">
+                        <div class="survey-item-info">
+                            <p><strong>{{ survey.title }}</strong> (ID: {{ survey.id }})</p>
+                        </div>
+                        <div class="survey-actions">
+                            <a href="{{ url_for('edit_survey', survey_id=survey.id) }}" class="button-link">Edit Design</a>
+                            <a href="{{ url_for('take_survey', survey_id=survey.id) }}" class="button-link button-success">Take Survey</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No surveys created yet. Click "Create New Survey" to get started.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

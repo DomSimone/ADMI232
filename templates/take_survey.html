@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Survey: {{ survey.title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f7f6; }
+        .container { max-width: 800px; margin: auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 10px; }
+        p.description { color: #7f8c8d; text-align: center; margin-bottom: 30px; }
+        .question-container { margin-bottom: 25px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #fdfdfd; }
+        .question-container.hidden { display: none; }
+        .question-container label { display: block; font-weight: bold; margin-bottom: 10px; color: #34495e; font-size: 1.1em; }
+        .question-container input[type="text"],
+        .question-container input[type="number"],
+        .question-container input[type="date"],
+        .question-container textarea {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        .question-container .options-group label {
+            font-weight: normal;
+            display: inline-block;
+            margin-left: 5px;
+            margin-right: 15px;
+        }
+        .question-container .options-group input[type="radio"],
+        .question-container .options-group input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        .error-message { color: #e74c3c; font-size: 0.9em; margin-top: 5px; }
+        .submit-button {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+        .submit-button:hover { background-color: #218838; }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #007bff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ survey.title }}</h1>
+        <p class="description">{{ survey.description }}</p>
+
+        <form id="surveyForm">
+            {# Iterate over questions_data which already has parsed JSON fields #}
+            {% for question in questions_data %}
+                <div class="question-container" id="question-{{ question.id }}" data-question-id="{{ question.id }}">
+                    <label for="q-{{ question.id }}">{{ loop.index }}. {{ question.text }}</label>
+                    {% if question.type == 'text' %}
+                        <input type="text" id="q-{{ question.id }}" name="q-{{ question.id }}">
+                    {% elif question.type == 'number' %}
+                        <input type="number" id="q-{{ question.id }}" name="q-{{ question.id }}">
+                    {% elif question.type == 'date' %}
+                        <input type="date" id="q-{{ question.id }}" name="q-{{ question.id }}">
+                    {% elif question.type == 'multiple_choice' %}
+                        <div class="options-group">
+                            {% for option in question.options %} {# question.options is now a list #}
+                                <input type="radio" id="q-{{ question.id }}-{{ loop.index }}" name="q-{{ question.id }}" value="{{ option }}">
+                                <label for="q-{{ question.id }}-{{ loop.index }}">{{ option }}</label><br>
+                            {% endfor %}
+                        </div>
+                    {% elif question.type == 'checkbox' %}
+                        <div class="options-group">
+                            {% for option in question.options %} {# question.options is now a list #}
+                                <input type="checkbox" id="q-{{ question.id }}-{{ loop.index }}" name="q-{{ question.id }}" value="{{ option }}">
+                                <label for="q-{{ question.id }}-{{ loop.index }}">{{ option }}</label><br>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div id="error-q-{{ question.id }}" class="error-message"></div>
+                </div>
+            {% endfor %}
+            <button type="submit" class="submit-button">Submit Survey</button>
+        </form>
+        <a href="{{ url_for('survey_list') }}" class="back-link">Back to Survey List</a>
+    </div>
+
+    <script>
+        const surveyId = {{ survey.id }};
+        // Directly use the questions_data passed from Flask, which is already parsed
+        const questions_from_flask = {{ questions_data | tojson }};
+
+        const questions = questions_from_flask.map(q => {
+            const qElem = document.getElementById(`question-${q.id}`);
+            return {
+                id: q.id,
+                type: q.type,
+                element: qElem,
+                inputElement: qElem ? qElem.querySelector(`[name="q-${q.id}"]`) : null,
+                errorElement: qElem ? document.getElementById(`error-q-${q.id}`) : null,
+                validation: q.validation, // Already parsed Python dict/list
+                branchingLogic: q.branching_logic, // Already parsed Python dict/list
+                isVisible: true // Track visibility for branching logic
+            };
+        });
+
+        const surveyForm = document.getElementById('surveyForm');
+
+        // --- Validation Functions ---
+        function validateQuestion(question) {
+            const value = getQuestionValue(question);
+            if (question.errorElement) {
+                question.errorElement.textContent = ''; // Clear previous errors
+            }
+            let isValid = true;
+
+            if (question.validation.required && (!value || (Array.isArray(value) && value.length === 0))) {
+                if (question.errorElement) {
+                    question.errorElement.textContent = 'This field is required.';
+                }
+                isValid = false;
+            }
+
+            if (isValid && question.type === 'number') {
+                const numValue = parseFloat(value);
+                if (isNaN(numValue) && value !== '') { // Allow empty if not required
+                    if (question.errorElement) {
+                        question.errorElement.textContent = 'Please enter a valid number.';
+                    }
+                    isValid = false;
+                } else if (!isNaN(numValue)) {
+                    if (question.validation.min !== undefined && numValue < question.validation.min) {
+                        if (question.errorElement) {
+                            question.errorElement.textContent = `Value must be at least ${question.validation.min}.`;
+                        }
+                        isValid = false;
+                    }
+                    if (isValid && question.validation.max !== undefined && numValue > question.validation.max) {
+                        if (question.errorElement) {
+                            question.errorElement.textContent = `Value must be at most ${question.validation.max}.`;
+                        }
+                        isValid = false;
+                    }
+                }
+            }
+
+            if (isValid && question.type === 'text') {
+                if (question.validation.min_length !== undefined && value.length < question.validation.min_length) {
+                    if (question.errorElement) {
+                        question.errorElement.textContent = `Minimum length is ${question.validation.min_length} characters.`;
+                    }
+                    isValid = false;
+                }
+                if (isValid && question.validation.max_length !== undefined && value.length > question.validation.max_length) {
+                    if (question.errorElement) {
+                        question.errorElement.textContent = `Maximum length is ${question.validation.max_length} characters.`;
+                    }
+                    isValid = false;
+                }
+            }
+            // Add more validation types as needed (e.g., date format, regex)
+
+            return isValid;
+        }
+
+        function getQuestionValue(question) {
+            if (!question.inputElement) {
+                // For radio/checkbox groups, inputElement might be null as it's a collection
+                if (question.type === 'checkbox') {
+                    const checkedBoxes = question.element.querySelectorAll(`input[name="q-${question.id}"]:checked`);
+                    return Array.from(checkedBoxes).map(cb => cb.value);
+                } else if (question.type === 'multiple_choice') {
+                    const selectedRadio = question.element.querySelector(`input[name="q-${question.id}"]:checked`);
+                    return selectedRadio ? selectedRadio.value : null;
+                }
+                return null;
+            } else {
+                return question.inputElement.value;
+            }
+        }
+
+        // --- Branching Logic ---
+        function applyBranchingLogic() {
+            questions.forEach(currentQuestion => {
+                const logic = currentQuestion.branchingLogic;
+                if (Object.keys(logic).length > 0 && logic.if_answer !== undefined && logic.show_question_id !== undefined) {
+                    const targetQuestion = questions.find(q => q.id === logic.show_question_id);
+                    if (targetQuestion) {
+                        const controllingQuestion = currentQuestion; // The question that *has* the logic
+                        if (controllingQuestion) {
+                            const controllingAnswer = getQuestionValue(controllingQuestion);
+                            if (controllingAnswer === logic.if_answer) {
+                                targetQuestion.element.classList.remove('hidden');
+                                targetQuestion.isVisible = true;
+                            } else {
+                                targetQuestion.element.classList.add('hidden');
+                                targetQuestion.isVisible = false;
+                                // Optionally clear value if hidden
+                                if (targetQuestion.inputElement) {
+                                    if (targetQuestion.type === 'checkbox') {
+                                        targetQuestion.element.querySelectorAll(`input[name="q-${targetQuestion.id}"]:checked`).forEach(cb => cb.checked = false);
+                                    } else if (targetQuestion.type === 'multiple_choice') {
+                                        const selectedRadio = targetQuestion.element.querySelector(`input[name="q-${targetQuestion.id}"]:checked`);
+                                        if (selectedRadio) selectedRadio.checked = false;
+                                    } else {
+                                        targetQuestion.inputElement.value = '';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Attach event listeners for branching logic
+        questions.forEach(question => {
+            if (question.element) { // Ensure the element exists
+                if (question.type === 'checkbox' || question.type === 'multiple_choice') {
+                    question.element.querySelectorAll(`[name="q-${question.id}"]`).forEach(input => {
+                        input.addEventListener('change', applyBranchingLogic);
+                    });
+                } else if (question.inputElement) { // Check if inputElement exists for other types
+                    question.inputElement.addEventListener('input', applyBranchingLogic);
+                }
+            }
+        });
+
+        // --- Form Submission ---
+        surveyForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            let allValid = true;
+            const answers = {};
+
+            questions.forEach(question => {
+                if (question.isVisible) { // Only validate visible questions
+                    const isValid = validateQuestion(question);
+                    if (!isValid) {
+                        allValid = false;
+                    }
+                    answers[question.id] = getQuestionValue(question);
+                }
+            });
+
+            if (!allValid) {
+                alert('Please correct the errors in the form.');
+                return;
+            }
+
+            const submissionData = {
+                timestamp: new Date().toISOString(),
+                answers: answers
+            };
+
+            const response = await fetch(`/api/surveys/${surveyId}/submit_response`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(submissionData),
+            });
+
+            if (response.ok) {
+                alert('Survey submitted successfully!');
+                window.location.href = "{{ url_for('survey_list') }}"; // Redirect to survey list
+            } else {
+                const errorData = await response.json();
+                alert('Error submitting survey: ' + (errorData.error || response.statusText));
+            }
+        });
+
+        // Initial application of branching logic on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            applyBranchingLogic();
+        });
+    </script>
+</body>
+</html>
